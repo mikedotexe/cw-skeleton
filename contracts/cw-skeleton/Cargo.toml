@@ -1,0 +1,68 @@
+[package]
+name = "cw-skeleton"
+description = "CosmWasm smart contract skeleton"
+license = "MIT OR Apache-2.0"
+authors = ["Mike Purvis @mikedotexe"]
+version = "0.1.0"
+edition = "2021"
+readme = "README.md"
+repository = "https://github.com/mikedotexe/cw-skeleton"
+keywords = ["cosmwasm", "smart-contracts", "interchain", "cosmos", "blockchain"]
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+# This does not bloat contract size, it's only for creating the JSON schema
+[[bin]]
+name = "make-schema"
+path = "schema-maker/schema.rs"
+
+[dependencies]
+cosmwasm-std = "1.2.5"
+cosmwasm-schema = "1.2.5"
+cw2 = "1.0.1"
+schemars = "0.8.11"
+cw-storage-plus = "1.0.1"
+thiserror = { version = "1.0.37" }
+# Our package here
+cw-skeleton-pkg = { version = "0.1.0" }
+#cw-skeleton-pkg = { path = "../../packages/cw-skeleton-pkg"}
+
+[dev-dependencies]
+cw-multi-test = "0.16.4"
+
+# Make sure you've run: "cargo install cargo-run-script"
+# Then you can run the scripts below, like: "cargo run-script optimize"
+[package.metadata.scripts]
+optimize-m1 = """docker run --rm -v "$(pwd)":/code \
+  --mount type=volume,source="$(basename "$(pwd)")_cache",target=/code/target \
+  --mount type=volume,source=registry_cache,target=/usr/local/cargo/registry \
+  cosmwasm/rust-optimizer-arm64:0.12.13
+"""
+optimize = """docker run --rm -v "$(pwd)":/code \
+  --mount type=volume,source="$(basename "$(pwd)")_cache",target=/code/target \
+  --mount type=volume,source=registry_cache,target=/usr/local/cargo/registry \
+  cosmwasm/rust-optimizer:0.12.13
+"""
+schema = "cargo +nightly run --bin make-schema"
+unit-test = "cargo +nightly test --lib"
+# This is a fast way to run "cargo check" ignoring (most) warnings
+check-no-warnings = """RUSTFLAGS="-A warnings" cargo check"""
+test-no-warnings = """RUSTFLAGS="-A warnings" cargo test -- --nocapture"""
+
+[features]
+# for more explicit tests, cargo test --features=backtraces
+backtraces = ["cosmwasm-std/backtraces"]
+# use library feature to disable all instantiate/execute/query exports
+library = []
+
+[profile.release]
+opt-level = 3
+debug = false
+rpath = false
+lto = true
+debug-assertions = false
+codegen-units = 1
+panic = 'abort'
+incremental = false
+overflow-checks = true
